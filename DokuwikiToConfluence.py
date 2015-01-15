@@ -3,6 +3,7 @@ import urllib2
 from bs4 import BeautifulSoup, Comment
 
 dokuwikipageid = "start"
+attributes = ["id", "class"]
 
 def getExportFromWiki():
     dokuwikipageid = sys.argv[-1]
@@ -27,6 +28,31 @@ def removeAllComments(soup):
     [comment.extract() for comment in comments]
     return soup
 
+def removeAttributes(soup, attributes):
+    for tag in soup.findAll(True):
+        #tag.attrs['id'] = None
+        #tag.attrs['class'] = None
+        del tag["id"]
+        del tag["class"]
+    return soup
+
+
+# Add CDATA tags
+# open with <![CDATA[
+# close with ]]>
+def addCdataTags(soup):
+    openCdata = "<![CDATA["
+    closeCdata = "\n]]>"
+    findStart = "<ac:plain-text-body>"
+    findEnd = "</ac:plain-text-body>"
+    string = str(soup)
+    replaceStart = findStart + openCdata
+    replaceEnd = closeCdata + findEnd
+    string = string.replace(findStart, replaceStart)
+    string = string.replace(findEnd, replaceEnd)
+    soup = BeautifulSoup(string)
+    return soup
+
 
 #   find
 #<pre class="code">
@@ -48,64 +74,66 @@ def replacePreTagsWithConfluenceMacroTags(soup):
 
 # Adds block to top of Confluence page
 def addContentAndHistoryBlock(soup):
-    string = ""
-    string += """
+    historyBlock = """
 <ac:structured-macro ac:name="section">
-  <ac:rich-text-body>
-    <ac:structured-macro ac:name="column">
-      <ac:rich-text-body>
-        <h1>Inhaltsverzeichnis</h1>
-        <ac:structured-macro ac:name="toc">
-          <ac:parameter ac:name="location">top</ac:parameter>
-          <ac:parameter ac:name="exclude">Inhaltsverzeichnis|Ueberblick</ac:parameter>
-          <ac:parameter ac:name="type">list</ac:parameter>
-        </ac:structured-macro>
-      </ac:rich-text-body>
-    </ac:structured-macro>
-    <ac:structured-macro ac:name="column">
-      <ac:rich-text-body>
-        <h1>Ueberblick</h1>
-        <table>
-          <tbody>
-            <tr>
-              <th>
-                <p>Klassifizierung:</p>
-              </th>
-              <td>
-                <p>intern</p>
-              </td>
-            </tr>
-            <tr>
-              <th>
-                <p>Verteiler:</p>
-              </th>
-              <td>
-                <p>The unbelievable Machine Company GmbH</p>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <p>
-          <strong>Versionshistorie:</strong>
-        </p>
-        <p>
-          <ac:structured-macro ac:name="version-history">
-            <ac:parameter ac:name="first">6</ac:parameter>
-          </ac:structured-macro>
-        </p>
-      </ac:rich-text-body>
-    </ac:structured-macro>
-  </ac:rich-text-body>
+<ac:rich-text-body>
+<ac:structured-macro ac:name="column">
+<ac:rich-text-body>
+<h1>Inhaltsverzeichnis</h1>
+<ac:structured-macro ac:name="toc">
+<ac:parameter ac:name="location">top</ac:parameter>
+<ac:parameter ac:name="exclude">Inhaltsverzeichnis|Ueberblick</ac:parameter>
+<ac:parameter ac:name="type">list</ac:parameter>
+</ac:structured-macro>
+</ac:rich-text-body>
+</ac:structured-macro>
+<ac:structured-macro ac:name="column">
+<ac:rich-text-body>
+<h1>Ueberblick</h1>
+<table>
+<tbody>
+<tr>
+<th>
+<p>Klassifizierung:</p>
+</th>
+<td>
+<p>intern</p>
+</td>
+</tr>
+<tr>
+<th>
+<p>Verteiler:</p>
+</th>
+<td>
+<p>The unbelievable Machine Company GmbH</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>
+<strong>Versionshistorie:</strong>
+</p>
+<p>
+<ac:structured-macro ac:name="version-history">
+<ac:parameter ac:name="first">6</ac:parameter>
+</ac:structured-macro>
+</p>
+</ac:rich-text-body>
+</ac:structured-macro>
+</ac:rich-text-body>
 </ac:structured-macro>"""
-    s = BeautifulSoup(string)
-    s.append(soup)
-    soup = s
+
+    string = str(soup)
+    result = historyBlock + string
+    soup = BeautifulSoup(result)
     return soup
 
 #soup = readFromFile()
 soup = getExportFromWiki()
 soup = removeAllComments(soup)
 soup = replacePreTagsWithConfluenceMacroTags(soup)
+soup = removeAttributes(soup, attributes)
+soup = addCdataTags(soup)
 soup = addContentAndHistoryBlock(soup)
-print (soup.prettify)
+print soup
 
