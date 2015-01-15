@@ -8,7 +8,6 @@ attributes = ["id", "class"]
 def getExportFromWiki():
     dokuwikipageid = sys.argv[-1]
     url = "http://wiki.local/doku.php?id=" + dokuwikipageid + "&do=export_xhtmlbody"
-    print "getExport " + dokuwikipageid
     response = urllib2.urlopen(url)
     html = response.read()
     soup = BeautifulSoup(html)
@@ -30,8 +29,6 @@ def removeAllComments(soup):
 
 def removeAttributes(soup, attributes):
     for tag in soup.findAll(True):
-        #tag.attrs['id'] = None
-        #tag.attrs['class'] = None
         del tag["id"]
         del tag["class"]
     return soup
@@ -125,8 +122,7 @@ def addContentAndHistoryBlock(soup):
 
     string = str(soup)
     result = historyBlock + string
-    soup = BeautifulSoup(result)
-    return soup
+    return BeautifulSoup(result)
 
 #soup = readFromFile()
 soup = getExportFromWiki()
